@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     github_client_secret: str = Field(default="", exclude=True)
     jwt_secret: str = Field(default="secret", exclude=True)
 
+    # CORS allowed origins (comma-separated)
+    cors_origins: list[str] = Field(default=["http://localhost:5173"], exclude=True)
+
+    # token limit for max_tokens in chat completions
+    max_tokens_limit: int = Field(default=2000, exclude=True)
+
     # google ads settings
     ad_client: str = ""
     ad_slot: str = ""
@@ -55,6 +61,14 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
+    def model_post_init(self, *args, **kwargs):
+        import os
+        if os.environ.get("jwt_secret") is None and self.jwt_secret == "secret":
+            _logger.warning(
+                "jwt_secret is using default value 'secret' in production. "
+                "Set jwt_secret in .env for security."
+            )
 
 
 settings = Settings()
