@@ -1,0 +1,97 @@
+[
+  {
+    "type": "tarot",
+    "payload": {
+      "prompt": "我最近工作不顺利，想知道接下来该如何突破",
+      "prompt_type": "tarot"
+    },
+    "elapsed_ms": 32437.4,
+    "chunk_count": 23,
+    "content_length": 0,
+    "content_preview": "",
+    "error": null
+  },
+  {
+    "type": "dream",
+    "payload": {
+      "prompt": "梦见自己光身子没穿衣裤",
+      "prompt_type": "dream"
+    },
+    "elapsed_ms": 38977.3,
+    "chunk_count": 27,
+    "content_length": 0,
+    "content_preview": "",
+    "error": null
+  },
+  {
+    "type": "birthday",
+    "payload": {
+      "prompt": "想了解我的人生运势",
+      "prompt_type": "birthday",
+      "birthday": "1990-01-01 08:00:00"
+    },
+    "elapsed_ms": 56074.6,
+    "chunk_count": 96,
+    "content_length": 0,
+    "content_preview": "",
+    "error": null
+  },
+  {
+    "type": "name",
+    "payload": {
+      "prompt": "想了解这个名字的运势",
+      "prompt_type": "name",
+      "name": "李明"
+    },
+    "elapsed_ms": 5924.4,
+    "chunk_count": 9,
+    "content_length": 0,
+    "content_preview": "",
+    "error": null
+  },
+  {
+    "type": "new_name",
+    "payload": {
+      "prompt": "想给宝宝取个好名字",
+      "prompt_type": "new_name",
+      "surname": "王",
+      "sex": "male",
+      "birthday": "2024-01-01 08:00:00"
+    },
+    "elapsed_ms": 47.4,
+    "chunk_count": 0,
+    "content_length": 0,
+    "content_preview": "",
+    "error": null
+  },
+  {
+    "type": "plum_flower",
+    "payload": {
+      "prompt": "测试梅花易数",
+      "prompt_type": "plum_flower",
+      "plum_flower": {
+        "num1": 8,
+        "num2": 3
+      }
+    },
+    "elapsed_ms": 15146.0,
+    "chunk_count": 10,
+    "content_length": 0,
+    "content_preview": "",
+    "error": null
+  },
+  {
+    "type": "fate",
+    "payload": {
+      "prompt": "我和她的姻缘如何",
+      "prompt_type": "fate",
+      "name1": "李明",
+      "name2": "王芳"
+    },
+    "elapsed_ms": 42.5,
+    "chunk_count": 0,
+    "content_length": 0,
+    "content_preview": "",
+    "error": null
+  }
+]
