@@ -65,6 +65,10 @@ export function useDivination(promptType: string) {
           if (!msg.data) {
             return
           }
+          // [DONE] 标识表示正常结束，不处理内容
+          if (msg.data === '[DONE]') {
+            return
+          }
           try {
             const newContent = JSON.parse(msg.data)
             tmpResultBuffer += newContent
@@ -82,7 +86,7 @@ export function useDivination(promptType: string) {
         },
         onclose() {
           setStreaming(false)
-          // 保存历史记录（仅当有结果时）
+          // 仅当有实质内容时才保存历史（区分正常结束和异常断开）
           if (tmpResultBuffer && promptType) {
             const config = getDivinationOption(promptType)
             if (config) {

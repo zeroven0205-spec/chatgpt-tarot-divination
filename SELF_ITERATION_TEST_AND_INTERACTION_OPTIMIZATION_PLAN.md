@@ -1,6 +1,7 @@
 # 自我迭代测试和交互体验优化工具集计划
 
 > 规划日期：2026-05-18
+> 更新日期：2026-05-18（第一轮修复完成）
 > 项目：chatgpt-tarot-divination
 > 目标：建立独立于业务的 Prompt Tuning 框架 + 交互体验诊断工具集
 
@@ -16,6 +17,13 @@
 - **无法 A/B 测试** — 修改 prompt 需要改代码，无法灰度验证效果
 
 本计划旨在构建**独立工具集**，在不修改业务代码的情况下，对上述问题进行系统性诊断和优化。
+
+> ### 实施状态（2026-05-18 更新）
+> - ✅ **Prompt 参数化** — 已实现为 `src/divination/base.py:DIVINATION_PARAMS`，7种类型差异化配置
+> - ✅ **SSE 协议标准化** — 后端发送 `[DONE]` 标识，前端识别处理
+> - ⏳ **Prompt 版本化 / A/B 测试框架** — 尚未实施（可选）
+> - ⏳ **流式输出诊断工具** — 尚未实施（可选）
+> - ⏳ **交互体验测试工具** — 尚未实施（可选）
 
 ---
 
@@ -380,28 +388,27 @@ TEST_CASES = [
 
 ## 七、执行计划
 
-### 第一阶段：基础设施（1-2天）
-- [ ] 创建 `tools/` 目录结构
-- [ ] 实现 `prompt_registry.py` — Prompt 注册与管理
-- [ ] 实现 `param_config.py` — 类型参数配置
-- [ ] 实现 `sse_parser.py` — SSE 流解析
+### ✅ 第一阶段：基础设施（已完成）
+- [x] 创建 `tools/` 目录结构 → **直接复用 src/divination/base.py 实现**
+- [x] 实现 `param_config.py` → ✅ 已实现为 `DIVINATION_PARAMS` 字典（见 `src/divination/base.py`）
+- [x] 实现 `sse_parser.py` → ✅ SSE `[DONE]` 标识已在 `chatgpt_router.py` 实现
 
-### 第二阶段：评估能力（2-3天）
+### ⏳ 第二阶段：评估能力（未实施，可选）
 - [ ] 实现 `evaluator.py` — 5维度质量评估
 - [ ] 实现 `完整性检测.py` — 截断检测
 - [ ] 实现 `延迟分析.py` — 时延诊断
 
-### 第三阶段：交互测试（2-3天）
+### ⏳ 第三阶段：交互测试（未实施，可选）
 - [ ] 实现 `playwright_runner.py` — E2E 测试运行器
 - [ ] 实现 `打字机效果检测.py`
 - [ ] 实现 `错误状态审计.py`
 
-### 第四阶段：A/B 测试与报告（1-2天）
+### ⏳ 第四阶段：A/B 测试与报告（未实施，可选）
 - [ ] 实现 `ab_tester.py`
 - [ ] 实现 `markdown_report.py` 报告生成
 - [ ] 实现 `json_export.py` CI 集成导出
 
-### 第五阶段：集成与迭代（持续）
+### ⏳ 第五阶段：集成与迭代（持续）
 - [ ] 对 7 种占卜类型执行全覆盖评估
 - [ ] 根据评估结果调优 Prompt
 - [ ] 建立 baseline，对每次 Prompt 修改做效果追踪
@@ -426,9 +433,13 @@ TEST_CASES = [
 
 本工具集服务于 **第5批（Prompt Tuning 框架建设）**：
 
-- `prompt_registry.py` + `param_config.py` → 实现 Prompt 参数化改造
-- `evaluator.py` → 实现流式输出质量评估机制
-- `ab_tester.py` → 实现 Prompt A/B 测试基础设施
-- `打字机效果检测.py` + `错误状态审计.py` → 补充交互体验诊断
+| 计划项 | 状态 | 说明 |
+|--------|------|------|
+| `param_config.py` / `DIVINATION_PARAMS` | ✅ 已实现 | 见 `src/divination/base.py` |
+| Prompt 参数化改造 | ✅ 已实现 | 7种类型差异化配置 |
+| SSE 协议标准化（`[DONE]`） | ✅ 已实现 | 见 `chatgpt_router.py` |
+| `prompt_registry.py` / `ab_tester.py` | ⏳ 未实施 | 可选，需 A/B 测试时实施 |
+| `evaluator.py` / 流式输出质量评估 | ⏳ 未实施 | 可选，需量化效果时实施 |
+| `打字机效果检测.py` / `错误状态审计.py` | ⏳ 未实施 | 可选，需自动化 E2E 时实施 |
 
 工具集建设完成后，可系统性地对 7 种占卜类型的 Prompt 进行诊断和优化，并将优化结果反馈到 `src/divination/` 模块中。
