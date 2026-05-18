@@ -1,4 +1,4 @@
-# MiniMax M2.7 Token Plan API 替代 OpenAI API 评估报告
+# MiniMax M2.7 Token Plan API 替代 OpenAI API 评估报告 ✅
 
 > 评估日期：2026-04-29
 > 项目：chatgpt-tarot-divination

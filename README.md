@@ -104,7 +104,7 @@ x-api-model: <your-model-name>
 
 ### 方式一：Vercel 部署（推荐）
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdreamhunter2333%2Fchatgpt-tarot-divination&env=api_key,api_base&project-name=ai-divination&repository-name=ai-divination&demo-title=AI%20Divination&demo-description=AI%20Divination&demo-url=https%3A%2F%2Fdivination.app.awsl.uk)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fzeroven0205-spec%2Fchatgpt-tarot-divination&env=api_key,api_base&project-name=ai-divination&repository-name=ai-divination&demo-title=AI%20Divination&demo-description=AI%20Divination&demo-url=https%3A%2F%2Fdivination.app.awsl.uk)
 
 环境变量：`api_key`（必填）、`api_base`（可选）
 
@@ -113,7 +113,7 @@ x-api-model: <your-model-name>
 ```yaml
 services:
   chatgpt-tarot-divination:
-    image: ghcr.io/dreamhunter2333/chatgpt-tarot-divination:latest
+    image: ghcr.io/zeroven0205-spec/chatgpt-tarot-divination:latest
     container_name: chatgpt-tarot-divination
     restart: always
     ports:
