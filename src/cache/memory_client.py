@@ -1,7 +1,7 @@
 import time
 import logging
 import cachetools
-
+import threading
 
 
 from fastapi import HTTPException
@@ -34,6 +34,8 @@ class MemoryCacheClient(CacheClientBase):
         ttl=3600 + 60,
         timer=time.time
     )
+    # Protect against race conditions in check_rate_limit
+    _rate_limit_lock = threading.Lock()
 
     @classmethod
     def store_token(cls, key: str, token: str, expire_seconds: int) -> None:
@@ -60,31 +62,32 @@ class MemoryCacheClient(CacheClientBase):
     def check_rate_limit(cls, key: str, time_window_seconds: int, max_requests: int) -> None:
         cur_timestamp = int(time.time())
         try:
-            # get existing history or create new list
-            if key not in cls.request_limit_map:
-                cls.request_limit_map[key] = []
-            
-            history = cls.request_limit_map[key]
-            
-            # remove expired records
-            while history and history[0] < (cur_timestamp - time_window_seconds):
-                history.pop(0)
-            
-            # add current timestamp
-            history.append(cur_timestamp)
-             # update cache to refresh TTL
-            cls.request_limit_map[key] = history
-            
-            req_count = len(history)
-            if req_count > max_requests:
-                raise HTTPException(
-                    status_code=429, detail="Rate limit exceeded"
-                )
+            with cls._rate_limit_lock:
+                # get existing history or create new list
+                if key not in cls.request_limit_map:
+                    cls.request_limit_map[key] = []
+
+                history = cls.request_limit_map[key]
+
+                # remove expired records
+                while history and history[0] < (cur_timestamp - time_window_seconds):
+                    history.pop(0)
+
+                # add current timestamp
+                history.append(cur_timestamp)
+                 # update cache to refresh TTL
+                cls.request_limit_map[key] = history
+
+                req_count = len(history)
+                if req_count > max_requests:
+                    raise HTTPException(
+                        status_code=429, detail="Rate limit exceeded"
+                    )
             return
+        except HTTPException:
+            raise
         except Exception as e:
-            if isinstance(e, HTTPException):
-                raise e
             _logger.error(f"Rate limit failed: {e}")
-        raise HTTPException(
-            status_code=400, detail="Rate limit failed"
-        )
+            raise HTTPException(
+                status_code=400, detail="Rate limit failed"
+            )

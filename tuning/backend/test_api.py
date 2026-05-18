@@ -32,9 +32,9 @@ DEFAULT_PAYLOADS = {
     "dream": {"prompt": "梦见大蛇追我", "prompt_type": "dream"},
     "birthday": {"prompt": "想了解我的人生运势", "prompt_type": "birthday", "birthday": "1990-01-01 08:00:00"},
     "name": {"prompt": "想了解这个名字的运势", "prompt_type": "name", "name": "李明"},
-    "new_name": {"prompt": "想给宝宝取个好名字", "prompt_type": "new_name", "surname": "王", "sex": "male", "birthday": "2024-01-01 08:00:00"},
+    "new_name": {"prompt": "想给宝宝取个好名字", "prompt_type": "new_name", "new_name": {"surname": "王", "sex": "male", "birthday": "2024-01-01 08:00:00", "new_name_prompt": "聪明善良"}},
     "plum_flower": {"prompt": "测试梅花易数", "prompt_type": "plum_flower", "plum_flower": {"num1": 8, "num2": 3}},
-    "fate": {"prompt": "我和她的姻缘如何", "prompt_type": "fate", "name1": "李明", "name2": "王芳"},
+    "fate": {"prompt": "我和她的姻缘如何", "prompt_type": "fate", "fate": {"name1": "李明", "name2": "王芳"}},
 }
 
 

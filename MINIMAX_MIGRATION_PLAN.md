@@ -1,4 +1,4 @@
-# MiniMax M2.7 替代 OpenAI API 执行计划
+# MiniMax M2.7 替代 OpenAI API 执行计划 ✅
 
 > 计划日期：2026-04-29
 > 项目：chatgpt-tarot-divination

@@ -18,8 +18,8 @@ class Fate(DivinationFactory):
 
     def build_prompt(self, divination_body: DivinationBody) -> tuple[str, str]:
         fate = divination_body.fate
-        if not fate:
-            raise HTTPException(status_code=400, detail="Fate is required")
+        if not fate or not fate.name1 or not fate.name2:
+            raise HTTPException(status_code=400, detail="姻缘预测需要提供两个人的姓名 (name1 和 name2)")
         if len(fate.name1) > 40 or len(fate.name2) > 40:
             raise HTTPException(status_code=400, detail="Prompt too long")
         prompt = f'{fate.name1}, {fate.name2}'
