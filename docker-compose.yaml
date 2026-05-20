@@ -1,6 +1,6 @@
 services:
   chatgpt-tarot-divination:
-    image: ghcr.io/dreamhunter2333/chatgpt-tarot-divination:latest
+    image: ghcr.io/zeroven0205-spec/chatgpt-tarot-divination:latest
     container_name: chatgpt-tarot-divination
     restart: always
     ports:

@@ -1,6 +1,10 @@
 import datetime
+import logging
+from fastapi import HTTPException
 from src.models import DivinationBody
 from .base import DivinationFactory
+
+_logger = logging.getLogger(__name__)
 
 BIRTHDAY_PROMPT = "我请求你担任中国传统的生辰八字算命的角色。" \
     "我将会给你我的生日，请你根据我的生日推算命盘，" \
@@ -16,8 +20,15 @@ class BirthdayFactory(DivinationFactory):
         return self.internal_build_prompt(divination_body.birthday)
 
     def internal_build_prompt(self, birthday: str) -> tuple[str, str]:
-        birthday = datetime.datetime.strptime(
-            birthday, '%Y-%m-%d %H:%M:%S'
-        )
-        prompt = f"我的生日是{birthday.year}年{birthday.month}月{birthday.day}日{birthday.hour}时{birthday.minute}分{birthday.second}秒"
+        try:
+            birthday_dt = datetime.datetime.strptime(
+                birthday, '%Y-%m-%d %H:%M:%S'
+            )
+        except (ValueError, TypeError):
+            _logger.warning(f"Invalid birthday format: {birthday}")
+            raise HTTPException(
+                status_code=400,
+                detail="生日格式错误，请使用 YYYY-MM-DD HH:MM:SS 格式"
+            )
+        prompt = f"我的生日是{birthday_dt.year}年{birthday_dt.month}月{birthday_dt.day}日{birthday_dt.hour}时{birthday_dt.minute}分{birthday_dt.second}秒"
         return prompt, BIRTHDAY_PROMPT

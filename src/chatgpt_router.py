@@ -59,9 +59,12 @@ async def divination(
     if not divination_obj:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"No prompt type {divination_body.prompt_type} not supported"
+            detail=f"Prompt type '{divination_body.prompt_type}' is not supported"
         )
     prompt, system_prompt = divination_obj.build_prompt(divination_body)
+
+    # 按占卜类型获取差异化参数
+    llm_params = DivinationFactory.get_params(divination_body.prompt_type)
 
     # custom api key, model and base url support
     custom_base_url = request.headers.get("x-api-url")
@@ -83,8 +86,8 @@ async def divination(
     try:
         openai_stream = await api_client.chat.completions.create(
             model=api_model,
-            max_tokens=1000,
-            temperature=0.9,
+            max_tokens=llm_params["max_tokens"],
+            temperature=llm_params["temperature"],
             top_p=1,
             stream=True,
             messages=[
@@ -111,5 +114,6 @@ async def divination(
         except Exception as e:
             _logger.error(f"Streaming error: {e}")
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        yield "data: [DONE]\n\n"
 
     return StreamingResponse(get_openai_generator(), media_type='text/event-stream')

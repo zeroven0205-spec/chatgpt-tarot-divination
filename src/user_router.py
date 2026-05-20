@@ -17,7 +17,7 @@ _logger = logging.getLogger(__name__)
 GITHUB_URL = "https://github.com/login/oauth/authorize?" \
     f"client_id={settings.github_client_id}" \
     "&scope=user:email"
-GITHUB_TOEKN_URL = "https://github.com/login/oauth/access_token" \
+GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token" \
     f"?client_id={settings.github_client_id}" \
     f"&client_secret={settings.github_client_secret}"
 GITHUB_USER_URL = "https://api.github.com/user"
@@ -55,10 +55,16 @@ async def oauth(oauth_body: OauthBody):
     if oauth_body.login_type == "github" and oauth_body.code:
         async with httpx.AsyncClient() as client:
             resp = await client.post(
-                f"{GITHUB_TOEKN_URL}&code={oauth_body.code}",
+                f"{GITHUB_TOKEN_URL}&code={oauth_body.code}",
                 headers={"Accept": "application/json"}
             )
-            access_token = resp.json()['access_token']
+            access_token = resp.json().get('access_token')
+            if not access_token:
+                _logger.error(f"GitHub OAuth failed: {resp.text}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to obtain access token from GitHub"
+                )
             
             res = await client.get(
                 GITHUB_USER_URL,
@@ -68,8 +74,13 @@ async def oauth(oauth_body: OauthBody):
                 }
             )
             user_data = res.json()
-            
-        user_name = user_data['login']
+            user_name = user_data.get('login')
+            if not user_name:
+                _logger.error(f"GitHub user data missing 'login': {user_data}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to obtain user info from GitHub"
+                )
         return jwt.encode(
             User(
                 login_type=oauth_body.login_type,

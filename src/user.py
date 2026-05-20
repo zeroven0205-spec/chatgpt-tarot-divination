@@ -29,5 +29,12 @@ def get_user(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
         return jwt_payload
-    except Exception:
+    except jwt.ExpiredSignatureError:
+        _logger.warning(f"JWT token expired: {jwt_token[:20]}...")
+        return
+    except jwt.InvalidTokenError as e:
+        _logger.warning(f"JWT invalid token: {e}")
+        return
+    except Exception as e:
+        _logger.warning(f"JWT verification failed: {e}")
         return
