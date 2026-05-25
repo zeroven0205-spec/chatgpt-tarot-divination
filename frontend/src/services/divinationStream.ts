@@ -1,4 +1,3 @@
-import { fetchEventSource, EventStreamContentType } from '@microsoft/fetch-event-source'
 import type { DivinationPayload, DivinationRequest, DivinationType } from '@/types/divination'
 
 const API_BASE = import.meta.env.VITE_API_BASE || ''
@@ -42,7 +41,15 @@ async function getErrorMessage(response: Response): Promise<string> {
       return detail
     }
   } catch (error) {
-    console.error(error)
+    // If JSON parsing fails, try to read as text for error details
+    try {
+      const text = await response.clone().text()
+      if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+        return '服务返回了错误页面，请检查后端服务'
+      }
+    } catch {
+      // ignore
+    }
   }
 
   if (response.status === 403) {
@@ -83,58 +90,124 @@ export async function streamDivination<T extends DivinationType>({
     prompt_type: promptType,
   } as DivinationRequest<T>
 
-  await fetchEventSource(`${API_BASE}/api/divination`, {
+  const response = await fetch(`${API_BASE}/api/divination`, {
     method: 'POST',
     body: JSON.stringify(requestBody),
     headers,
-    async onopen(response) {
-      if (response.ok && response.headers.get('content-type') === EventStreamContentType) {
-        onStart()
-        return
-      }
-      throw new Error(await getErrorMessage(response))
-    },
-    onmessage(msg) {
-      if (msg.event === 'FatalError') {
-        throw new Error(msg.data)
-      }
-      if (!msg.data) {
-        return
-      }
-      if (msg.data === '[DONE]') {
+  })
+
+  const contentType = response.headers.get('content-type') || ''
+
+  // Check if response is SSE (text/event-stream)
+  if (!contentType.startsWith('text/event-stream')) {
+    throw new Error(await getErrorMessage(response))
+  }
+
+  onStart()
+
+  const reader = response.body?.getReader()
+  if (!reader) {
+    throw new Error('无法读取响应流')
+  }
+
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) {
+        // Process any remaining data in buffer
+        if (buffer.trim()) {
+          const lines = buffer.split('\n')
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6).trim()
+              if (data === '[DONE]') {
+                onDone()
+                return
+              }
+              if (data) {
+                try {
+                  const parsed = JSON.parse(data)
+                  if (typeof parsed === 'object' && parsed !== null && 'error' in parsed) {
+                    const errorPayload = parsed as Record<string, unknown>
+                    const message =
+                      typeof errorPayload.message === 'string'
+                        ? errorPayload.message
+                        : '占卜失败，请稍后重试'
+                    throw new Error(message)
+                  }
+                  onChunk(String(parsed))
+                } catch (parseError) {
+                  if (parseError instanceof Error && parseError.message.startsWith('占卜失败')) {
+                    throw parseError
+                  }
+                  // Ignore JSON parse errors for non-data lines
+                }
+              }
+            }
+          }
+        }
         onDone()
         return
       }
 
-      let parsedContent: unknown
-      try {
-        parsedContent = JSON.parse(msg.data)
-      } catch (error) {
-        console.error(error)
-        return
-      }
+      buffer += decoder.decode(value, { stream: true })
 
-      if (
-        typeof parsedContent === 'object' &&
-        parsedContent !== null &&
-        'error' in parsedContent
-      ) {
-        const errorPayload = parsedContent as Record<string, unknown>
-        const message =
-          typeof errorPayload.message === 'string'
-            ? errorPayload.message
-            : '占卜失败，请稍后重试'
-        throw new Error(message)
-      }
+      // Process complete lines
+      const lines = buffer.split('\n')
+      // Keep the last potentially incomplete line in buffer
+      buffer = lines.pop() || ''
 
-      onChunk(String(parsedContent))
-    },
-    onclose() {
-      onDone()
-    },
-    onerror(error) {
-      const message = error instanceof Error ? error.message : '网络连接异常，请稍后重试'
-      throw new Error(message)
-    },
-  })
+      for (const line of lines) {
+        const trimmedLine = line.trim()
+        if (!trimmedLine || trimmedLine === 'data: [DONE]') {
+          if (trimmedLine === 'data: [DONE]') {
+            onDone()
+            return
+          }
+          continue
+        }
+
+        if (trimmedLine.startsWith('data: ')) {
+          const data = trimmedLine.slice(6)
+
+          if (data === '[DONE]') {
+            onDone()
+            return
+          }
+
+          try {
+            const parsed = JSON.parse(data)
+
+            // Check for error payload
+            if (typeof parsed === 'object' && parsed !== null && 'error' in parsed) {
+              const errorPayload = parsed as Record<string, unknown>
+              const message =
+                typeof errorPayload.message === 'string'
+                  ? errorPayload.message
+                  : '占卜失败，请稍后重试'
+              throw new Error(message)
+            }
+
+            onChunk(String(parsed))
+          } catch (parseError) {
+            if (parseError instanceof Error && parseError.message.startsWith('占卜失败')) {
+              throw parseError
+            }
+            // Ignore JSON parse errors - might be partial data
+          }
+        }
+      }
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new Error('流式响应解析错误')
+  } finally {
+    reader.releaseLock()
+  }
 }
