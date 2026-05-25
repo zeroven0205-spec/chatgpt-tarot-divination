@@ -19,18 +19,14 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from src.divination.base import DivinationFactory, MetaDivination
+from src.divination.prompt_registry import get_evaluation_fixtures, get_prompt_variant
 from src.models import DivinationBody
 
 ALL_TYPES = list(MetaDivination.divination_map.keys())
-
 DEFAULT_INPUTS = {
-    "tarot": {"prompt": "我最近工作不顺利，想知道接下来该如何突破"},
-    "dream": {"prompt": "梦见大蛇追我"},
-    "birthday": {"prompt": "想了解我的人生运势", "birthday": "1990-01-01 08:00:00"},
-    "name": {"prompt": "想了解这个名字的运势", "name": "李明"},
-    "new_name": {"prompt": "想给宝宝取个好名字", "surname": "王", "sex": "male", "birthday": "2024-01-01 08:00:00"},
-    "plum_flower": {"prompt": "测试梅花易数", "plum_flower": {"num1": 8, "num2": 3}},
-    "fate": {"prompt": "我和她的姻缘如何", "name1": "李明", "name2": "王芳"},
+    dtype: fixtures[0]
+    for dtype, fixtures in get_evaluation_fixtures().items()
+    if fixtures
 }
 
 
@@ -58,7 +54,8 @@ def test_type(dtype: str, custom_input: dict = None, verbose: bool = False):
         return None
 
     print(f"\n{'─'*60}")
-    print(f"  {dtype}")
+    variant = get_prompt_variant(dtype)
+    print(f"  {dtype} | variant={variant.id} | temp={variant.temperature} | max_tokens={variant.max_tokens}")
     print(f"{'─'*60}")
     print(f"\n[ System ]")
     print(system_prompt or "(空)")

@@ -10,8 +10,9 @@ tuning/
 ├── backend/
 │   ├── test_prompts.py          # 直接调用 DivinationFactory，测试 prompt 构建
 │   ├── test_api.py              # 调用实际 API 端点，测试 SSE 流式输出质量
+│   ├── prompt_evaluator.py       # 本地轻量输出质量评估
 │   └── prompts/
-│       └── templates.py          # 各类型 System Prompt 模板快照（只读参考）
+│       └── templates.py          # 从 Prompt Registry 导出的模板快照
 ├── frontend/
 │   └── test_interactions.ts      # 前端 SSE 交互流程测试工具（浏览器 DevTools 可用）
 ├── scripts/
@@ -37,6 +38,7 @@ bash tuning/scripts/run_all.sh
 python tuning/backend/test_prompts.py --type dream --verbose   # 查看 prompt 模板
 python tuning/backend/test_api.py --type tarot --stream        # 查看 SSE 流输出
 python tuning/backend/test_api.py --type all --save            # 扫描全部类型并保存结果
+python tuning/backend/prompt_evaluator.py --type tarot --user-prompt "事业如何" --output "塔罗解析..."
 ```
 
 ## 核心工具说明
@@ -60,7 +62,26 @@ python tuning/backend/test_prompts.py                          # 全部类型
 python tuning/backend/test_prompts.py --type tarot --verbose   # tarot 类型详细输出
 ```
 
-### 3. test_api.py
+### 3. prompt_evaluator.py
+
+对模型输出做本地轻量评估，不依赖额外模型调用。当前评分维度：
+
+| 维度 | 说明 |
+|------|------|
+| completeness | 输出长度、句子结尾、格式闭合 |
+| relevance | 是否包含该占卜类型关键词，是否回应用户输入 |
+| role_consistency | 是否出现角色逃逸或拒答表达 |
+| format_quality | 是否有分段、列表或清晰结构 |
+| fluency | 空格、占位值、逗号密度等基础可读性 |
+
+```bash
+python tuning/backend/prompt_evaluator.py \
+  --type tarot \
+  --user-prompt "事业如何" \
+  --output "塔罗解析：过去..."
+```
+
+### 4. test_api.py
 
 对 `/api/divination` 发真实 SSE 请求，测量延迟、chunk 数量、输出质量。
 
@@ -70,7 +91,7 @@ python tuning/backend/test_api.py --type all --save            # 扫描全部
 python tuning/backend/test_api.py --type tarot --stream         # 显示原始 SSE 流
 ```
 
-### 4. test_interactions.ts
+### 5. test_interactions.ts
 
 前端交互流程验证工具。可在 Node.js 环境运行（需 fetch），或复制到浏览器 DevTools。
 
@@ -101,18 +122,26 @@ await runAllTests();
 5. 在前端 localhost:5173 页面做最终体验验证
 ```
 
-## 修改 Prompt 模板
+## Prompt Registry
 
-System Prompt 定义在对应的 `src/divination/{type}.py` 文件中：
+System Prompt、模型参数和评估样例集中定义在：
 
-| 类型 | 文件 | 变量名 |
-|------|------|--------|
-| tarot | `src/divination/tarot.py` | `TAROT_PROMPT` |
-| dream | `src/divination/dream.py` | `DREAM_PROMPT` |
-| birthday | `src/divination/birthday.py` | - |
-| name | `src/divination/name.py` | - |
-| new_name | `src/divination/new_name.py` | - |
-| plum_flower | `src/divination/plum_flower.py` | - |
-| fate | `src/divination/fate.py` | - |
+```
+src/divination/prompt_registry.py
+```
 
-当前各类型 prompt 模板快照见 `tuning/backend/prompts/templates.py`。
+业务代码通过 `get_system_prompt()` 和 `DivinationFactory.get_params()` 读取当前 active variant。新增或调整 prompt 时，优先新增 variant 并切换 `active_variant`，再用 `test_prompts.py` 和 `prompt_evaluator.py` 验证。
+
+当前 registry 快照见 `tuning/backend/prompts/templates.py`。
+
+## Provider Profiles
+
+`src/divination/prompt_registry.py` 还包含轻量 provider profiles：
+
+| Provider | 用途 |
+|----------|------|
+| openai | 默认 OpenAI Chat Completions 兼容配置 |
+| minimax | MiniMax OpenAI-compatible 接入说明 |
+| custom | 前端自定义 API Base URL / Key / Model |
+
+当前版本只记录 profile 元数据，不改变现有请求链路。

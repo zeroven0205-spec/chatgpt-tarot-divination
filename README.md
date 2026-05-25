@@ -119,14 +119,16 @@ services:
     ports:
       - 8000:8000
     environment:
-      - api_key=sk-xxx                         # 必填
-      # - api_base=https://api.openai.com/v1   # 可选
-      # - model=gpt-3.5-turbo                   # 可选
-      # - github_client_id=xxx                   # 可选：GitHub OAuth
-      # - github_client_secret=xxx              # 可选
-      # - jwt_secret=secret                      # 可选
-      # - rate_limit=60,3600                     # 可选：游客速率限制
-      # - user_rate_limit=600,3600               # 可选：用户速率限制
+      api_key: ${API_KEY:?Set API_KEY}          # 必填
+      app_env: production                       # 生产部署建议显式设置
+      jwt_secret: ${JWT_SECRET:?Set JWT_SECRET} # 生产部署必填，使用强随机字符串
+      # api_base: https://api.openai.com/v1     # 可选
+      # model: gpt-3.5-turbo                    # 可选
+      # cors_origins: https://your-domain.example
+      # github_client_id: ${GITHUB_CLIENT_ID}    # 可选：GitHub OAuth
+      # github_client_secret: ${GITHUB_CLIENT_SECRET}
+      # rate_limit: 60,3600                     # 可选：游客速率限制
+      # user_rate_limit: 600,3600               # 可选：用户速率限制
 ```
 
 ```bash
@@ -136,7 +138,7 @@ docker-compose up -d
 
 ### 方式三：本地运行
 
-**前置要求**：Node.js 16+ / Python 3.8+ / pnpm
+**前置要求**：Node.js 20+ / Python 3.11 / pnpm 10+
 
 ```bash
 # 1. 配置环境变量
@@ -149,12 +151,20 @@ cd frontend && pnpm install && pnpm build --emptyOutDir && cd ..
 rm -rf dist && cp -r frontend/dist/ dist
 
 # 4. 安装后端依赖
-python3 -m venv ./venv
+python3.11 -m venv ./venv
 ./venv/bin/python3 -m pip install -r requirements.txt
 
-# 5. 启动后端（自动清理 8000 端口占用）
+# 5. 启动后端
 ./venv/bin/python3 main.py
 # 访问 http://localhost:8000
+```
+
+### 本地测试
+
+```bash
+python3.11 -m venv ./venv
+./venv/bin/python3 -m pip install -r requirements-dev.txt
+./venv/bin/python3 -m pytest tests
 ```
 
 ### 方式四：Tauri 桌面应用（macOS / Windows）
@@ -172,11 +182,13 @@ cd src-tauri && cargo build --release
 | 变量 | 必填 | 默认值 | 说明 |
 |------|------|--------|------|
 | `api_key` | 是 | — | OpenAI / MiniMax API Key |
+| `app_env` | 否 | `development` | 运行环境；生产部署设置为 `production` |
 | `api_base` | 否 | `https://api.openai.com/v1` | API Base URL |
 | `model` | 否 | `gpt-3.5-turbo` | 默认模型 |
 | `github_client_id` | 否 | — | GitHub OAuth Client ID |
 | `github_client_secret` | 否 | — | GitHub OAuth Secret |
-| `jwt_secret` | 否 | `secret` | JWT 签名密钥 |
+| `jwt_secret` | 生产必填 | `secret`（仅开发） | JWT 签名密钥；`app_env=production` 时必须设置为非默认强随机值 |
+| `cors_origins` | 否 | `http://localhost:5173` | 允许跨域来源，生产环境建议设置为实际域名 |
 | `rate_limit` | 否 | `60,3600` | 游客速率限制（请求数,秒） |
 | `user_rate_limit` | 否 | `600,3600` | 用户速率限制 |
 

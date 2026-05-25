@@ -1,20 +1,35 @@
 import { Button } from '@/components/ui/button'
-import { Sparkles, X } from 'lucide-react'
+import { Copy, History, RotateCcw, Sparkles, X } from 'lucide-react'
 import { useRef, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import DOMPurify from 'dompurify'
+import { toast } from 'sonner'
 
 interface ResultDrawerProps {
   show: boolean
   onClose: () => void
   result: string
+  rawResult: string
   loading: boolean
   streaming: boolean
+  onRetry?: () => void
+  historyPath?: string
 }
 
-export function ResultDrawer({ show, onClose, result, loading, streaming }: ResultDrawerProps) {
+export function ResultDrawer({
+  show,
+  onClose,
+  result,
+  rawResult,
+  loading,
+  streaming,
+  onRetry,
+  historyPath,
+}: ResultDrawerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isAnimating, setIsAnimating] = useState(false)
+  const navigate = useNavigate()
 
   // 控制入场动画
   useEffect(() => {
@@ -42,6 +57,27 @@ export function ResultDrawer({ show, onClose, result, loading, streaming }: Resu
 
   if (!show) return null
 
+  const handleCopy = async () => {
+    if (!rawResult) {
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(rawResult)
+      toast.success('结果已复制')
+    } catch (error) {
+      console.error(error)
+      toast.error('复制失败')
+    }
+  }
+
+  const handleHistory = () => {
+    if (!historyPath) {
+      return
+    }
+    onClose()
+    navigate(historyPath)
+  }
+
   const drawerContent = (
     <div className="fixed inset-0 z-50 animate-in fade-in duration-200">
       {/* 背景遮罩 */}
@@ -62,14 +98,47 @@ export function ResultDrawer({ show, onClose, result, loading, streaming }: Resu
             <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-primary" />
             <h3 className="text-lg md:text-xl font-semibold">占卜结果</h3>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-full hover:bg-muted h-8 w-8 md:h-10 md:w-10"
-          >
-            <X className="h-4 w-4 md:h-5 md:w-5" />
-          </Button>
+          <div className="flex items-center gap-1 md:gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCopy}
+              className="rounded-full hover:bg-muted h-8 w-8 md:h-10 md:w-10"
+              disabled={!rawResult}
+              title="复制结果"
+            >
+              <Copy className="h-4 w-4 md:h-5 md:w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onRetry}
+              className="rounded-full hover:bg-muted h-8 w-8 md:h-10 md:w-10"
+              disabled={!onRetry || loading}
+              title="重新占卜"
+            >
+              <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleHistory}
+              className="rounded-full hover:bg-muted h-8 w-8 md:h-10 md:w-10"
+              disabled={!historyPath}
+              title="查看历史"
+            >
+              <History className="h-4 w-4 md:h-5 md:w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="rounded-full hover:bg-muted h-8 w-8 md:h-10 md:w-10"
+              title="关闭"
+            >
+              <X className="h-4 w-4 md:h-5 md:w-5" />
+            </Button>
+          </div>
         </div>
         {/* 内容区域 */}
         <div

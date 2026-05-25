@@ -47,8 +47,8 @@ async def divination(
 
     _logger.info(
         f"Request from {real_ip}, "
-        f"user={user.model_dump_json(context=dict(ensure_ascii=False)) if user else None}, "
-        f"body={divination_body.model_dump_json(context=dict(ensure_ascii=False))}"
+        f"user={user.model_dump_json() if user else None}, "
+        f"body={divination_body.model_dump_json()}"
     )
     if any(w in divination_body.prompt.lower() for w in STOP_WORDS):
         raise HTTPException(
@@ -99,10 +99,13 @@ async def divination(
             ]
         )
     except Exception as e:
-        _logger.error(f"OpenAI API error: {e}")
+        _logger.error(f"OpenAI API error: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"OpenAI API error: {str(e)}"
+            detail={
+                "error": "ai_provider_error",
+                "message": "模型服务暂时不可用，请稍后重试",
+            }
         )
 
     async def get_openai_generator():
@@ -112,8 +115,12 @@ async def divination(
                     current_response = event.choices[0].delta.content
                     yield f"data: {json.dumps(current_response)}\n\n"
         except Exception as e:
-            _logger.error(f"Streaming error: {e}")
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            _logger.error(f"Streaming error: {e}", exc_info=True)
+            error_payload = {
+                "error": "streaming_error",
+                "message": "流式响应中断，请稍后重试",
+            }
+            yield f"data: {json.dumps(error_payload)}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(get_openai_generator(), media_type='text/event-stream')

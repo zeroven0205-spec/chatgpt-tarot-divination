@@ -25,18 +25,15 @@ from typing import Optional
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.divination.base import DivinationFactory, MetaDivination
+from src.divination.prompt_registry import get_evaluation_fixtures, get_prompt_variant
 from src.models import DivinationBody
 
 
 DIVINATION_TYPES = list(MetaDivination.divination_map.keys())
 DEFAULT_TEST_CASES = {
-    "tarot": {"prompt": "我最近工作不顺利，想知道接下来该如何突破"},
-    "dream": {"prompt": "梦见大蛇追我"},
-    "birthday": {"prompt": "想了解我的人生运势", "birthday": "1990-01-01 08:00:00"},
-    "name": {"prompt": "想了解这个名字的运势", "name": "李明"},
-    "new_name": {"prompt": "想给宝宝取个好名字", "surname": "王", "sex": "male", "birthday": "2024-01-01 08:00:00"},
-    "plum_flower": {"prompt": "测试梅花易数", "plum_flower": {"num1": 8, "num2": 3}},
-    "fate": {"prompt": "我和她的姻缘如何", "name1": "李明", "name2": "王芳"},
+    dtype: fixtures[0]
+    for dtype, fixtures in get_evaluation_fixtures().items()
+    if fixtures
 }
 
 
@@ -60,6 +57,8 @@ def test_prompt_build(divination_type: str, params: dict) -> dict:
             "type": divination_type,
             "system_prompt": system_prompt,
             "user_prompt": user_prompt,
+            "prompt_variant": get_prompt_variant(divination_type).id,
+            "llm_params": DivinationFactory.get_params(divination_type),
             "params": params,
             "factory": factory.__class__.__name__,
         }
@@ -74,7 +73,10 @@ def print_prompt_result(result: dict, verbose: bool = False):
         return
 
     print(f"\n{'='*60}")
-    print(f"类型: {result['type']} | Factory: {result['factory']}")
+    print(
+        f"类型: {result['type']} | Factory: {result['factory']} | "
+        f"Variant: {result['prompt_variant']}"
+    )
     print(f"{'='*60}")
     print(f"\n[System Prompt]")
     print(result["system_prompt"])
@@ -82,6 +84,7 @@ def print_prompt_result(result: dict, verbose: bool = False):
     print(result["user_prompt"])
     if verbose:
         print(f"\n[Params] {result['params']}")
+        print(f"[LLM Params] {result['llm_params']}")
 
 
 def save_result(result: dict, tag: str = ""):

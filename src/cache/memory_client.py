@@ -70,12 +70,12 @@ class MemoryCacheClient(CacheClientBase):
                 history = cls.request_limit_map[key]
 
                 # remove expired records
-                while history and history[0] < (cur_timestamp - time_window_seconds):
+                while history and history[0] <= (cur_timestamp - time_window_seconds):
                     history.pop(0)
 
                 # add current timestamp
                 history.append(cur_timestamp)
-                 # update cache to refresh TTL
+                # update cache to refresh TTL
                 cls.request_limit_map[key] = history
 
                 req_count = len(history)

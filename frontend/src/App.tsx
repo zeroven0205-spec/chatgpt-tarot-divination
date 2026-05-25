@@ -32,12 +32,15 @@ function App() {
   const fetchSettings = async () => {
     setLoading(true)
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      if (jwt) {
+        headers.Authorization = `Bearer ${jwt}`
+      }
       const response = await fetch(`${API_BASE}/api/v1/settings`, {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${jwt || 'xxx'}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
       })
       if (response.ok) {
         const data = await response.json()

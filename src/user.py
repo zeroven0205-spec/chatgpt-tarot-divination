@@ -11,17 +11,21 @@ from src.models import User
 from fastapi import HTTPException
 
 _logger = logging.getLogger(__name__)
-security = HTTPBearer()
-DEFAULT_TOKEN = ["xxx", "undefined"]
+security = HTTPBearer(auto_error=False)
+DEFAULT_TOKEN = {"", "xxx", "undefined", "null"}
 
 
 def get_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> Optional[User]:
+    if not credentials or not credentials.credentials:
+        return None
+
+    jwt_token = credentials.credentials.strip()
+    if jwt_token.lower() in DEFAULT_TOKEN:
+        return None
+
     try:
-        jwt_token = credentials.credentials
-        if not jwt_token or jwt_token in DEFAULT_TOKEN:
-            return
         payload = jwt.decode(
             jwt_token, settings.jwt_secret, algorithms=["HS256"])
         jwt_payload = User.parse_obj(payload)
@@ -31,10 +35,10 @@ def get_user(
         return jwt_payload
     except jwt.ExpiredSignatureError:
         _logger.warning(f"JWT token expired: {jwt_token[:20]}...")
-        return
+        return None
     except jwt.InvalidTokenError as e:
         _logger.warning(f"JWT invalid token: {e}")
-        return
+        return None
     except Exception as e:
         _logger.warning(f"JWT verification failed: {e}")
-        return
+        return None

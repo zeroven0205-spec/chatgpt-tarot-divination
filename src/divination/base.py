@@ -1,18 +1,7 @@
-
 from src.models import DivinationBody
-from typing import Optional
+from typing import Tuple, Optional
 
-
-# 按占卜类型配置的 LLM 参数
-DIVINATION_PARAMS: dict[str, dict] = {
-    "tarot":       {"temperature": 0.9, "max_tokens": 1500},
-    "dream":       {"temperature": 0.9, "max_tokens": 1200},
-    "plum_flower": {"temperature": 0.9, "max_tokens": 1000},
-    "birthday":    {"temperature": 0.85, "max_tokens": 2000},
-    "new_name":    {"temperature": 0.85, "max_tokens": 1500},
-    "name":        {"temperature": 0.8, "max_tokens": 800},
-    "fate":        {"temperature": 0.8, "max_tokens": 800},   # 娱乐化降低 temperature
-}
+from .prompt_registry import get_params
 
 
 class MetaDivination(type):
@@ -34,10 +23,13 @@ class DivinationFactory(metaclass=MetaDivination):
             return
         return cls()
 
-    def build_prompt(self, divination_body: DivinationBody) -> tuple[str, str]:
+    def build_prompt(self, divination_body: DivinationBody) -> Tuple[str, str]:
         return '', ''
 
     @classmethod
     def get_params(cls, divination_type: str) -> dict:
         """返回指定类型的 LLM 参数（temperature, max_tokens）"""
-        return DIVINATION_PARAMS.get(divination_type, {"temperature": 0.9, "max_tokens": 1000})
+        try:
+            return get_params(divination_type)
+        except KeyError:
+            return {"temperature": 0.9, "max_tokens": 1000}

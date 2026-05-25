@@ -3,7 +3,7 @@ import logging
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse, FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.limiter import get_real_ipaddr
@@ -58,10 +58,10 @@ async def exception_handler(request: Request, exc: Exception):
         }
     )
 
-    # 直接返回原始错误信息
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
-            "error": str(exc)
+            "error": "internal_server_error",
+            "message": "服务暂时不可用，请稍后重试",
         },
     )

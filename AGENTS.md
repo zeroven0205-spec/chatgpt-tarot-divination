@@ -7,7 +7,8 @@
 - `assets/`: images; root has `main.py`, `Dockerfile`, `docker-compose.yaml`.
 
 ## Build, Test, and Development Commands
-- Backend: `python3 -m venv ./venv` → `./venv/bin/python3 -m pip install -r requirements.txt` → `./venv/bin/python3 main.py`.
+- Backend: `python3.11 -m venv ./venv` → `./venv/bin/python3 -m pip install -r requirements.txt` → `./venv/bin/python3 main.py`.
+- Backend tests: `./venv/bin/python3 -m pip install -r requirements-dev.txt` → `./venv/bin/python3 -m pytest tests`.
 - Frontend: `cd frontend && pnpm install` → `pnpm dev` | `pnpm build` | `pnpm lint`.
 - Docker: `docker-compose up -d`.
 
@@ -17,7 +18,7 @@
 - Tailwind is the primary styling approach.
 
 ## Testing Guidelines
-No dedicated test framework. If adding tests, place them near code (e.g., `frontend/src/**/__tests__` or `tests/`) and document how to run.
+Backend tests use pytest and live in `tests/`. Run `./venv/bin/python3 -m pytest tests` before backend changes.
 
 ## Commit & Pull Request Guidelines
 - Commit style: `feat:`, `fix:`, `refactor:`, `style:`; issue refs like `(#95)` appear.

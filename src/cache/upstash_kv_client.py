@@ -1,6 +1,7 @@
 import logging
 
 import time
+import uuid
 from typing import Optional
 
 from fastapi import HTTPException
@@ -23,10 +24,9 @@ class UpstashCacheClient(CacheClientBase):
         try:
             res = requests.post(
                 f"{settings.upstash_api_url}",
-                data=f'["SET", "{key}", "{token}", "EX", "{expire_seconds}"]',
+                json=["SET", key, token, "EX", expire_seconds],
                 headers={
                     "Authorization": f"Bearer {settings.upstash_api_token}",
-                    "Content-Type": "application/json",
                 }
             ).json()
             if res.get("result") == "OK":
@@ -42,10 +42,9 @@ class UpstashCacheClient(CacheClientBase):
         try:
             res = requests.post(
                 f"{settings.upstash_api_url}",
-                data=f'["GET", "{key}"]',
+                json=["GET", key],
                 headers={
                     "Authorization": f"Bearer {settings.upstash_api_token}",
-                    "Content-Type": "application/json",
                 }
             )
             if res.status_code != 200:
@@ -58,28 +57,32 @@ class UpstashCacheClient(CacheClientBase):
 
     @classmethod
     def check_rate_limit(cls, key: str, time_window_seconds: int, max_requests: int) -> None:
-        # user zest to check rate limit
         cur_timestamp = int(time.time())
+        request_member = f"{cur_timestamp}:{uuid.uuid4().hex}"
+        commands = [
+            ["ZREMRANGEBYSCORE", key, "-inf", cur_timestamp - time_window_seconds],
+            ["ZADD", key, cur_timestamp, request_member],
+            ["EXPIRE", key, time_window_seconds],
+            ["ZCARD", key],
+        ]
         try:
             res = requests.post(
                 f"{settings.upstash_api_url}/multi-exec",
-                data="["
-                f'["ZREMRANGEBYSCORE", "{key}", "-inf", {cur_timestamp - time_window_seconds}],'
-                f'["ZADD", "{key}", {cur_timestamp}, {cur_timestamp}],'
-                f'["EXPIRE", "{key}", {time_window_seconds}],'
-                f'["ZCARD", "{key}"]'
-                "]",
+                json=commands,
                 headers={
                     "Authorization": f"Bearer {settings.upstash_api_token}",
-                    "Content-Type": "application/json",
                 }
             ).json()
-            if not all(["result" in r for r in res]) or len(res) != 4:
+            if (
+                not isinstance(res, list)
+                or len(res) != 4
+                or not all(isinstance(item, dict) and "result" in item for item in res)
+            ):
                 raise HTTPException(
                     status_code=400, detail="Can't get rate limit result"
                 )
             _, _, _, req_count = res
-            if req_count.get("result", 0) >= max_requests:
+            if req_count.get("result", 0) > max_requests:
                 raise HTTPException(
                     status_code=429, detail="Rate limit exceeded"
                 )

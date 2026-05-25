@@ -1,21 +1,16 @@
+from typing import Tuple
 import datetime
 from fastapi import HTTPException
 from src.models import DivinationBody
 from .base import DivinationFactory
-
-NEW_NAME_PROMPT = (
-    "我请求你担任起名师的角色，"
-    "我将会给你我的姓氏、生日、性别等，"
-    "请返回你认为最适合我的名字，"
-    "请注意姓氏在前，名字在后。"
-)
+from .prompt_registry import get_system_prompt
 
 
 class NewNameFactory(DivinationFactory):
 
     divination_type = "new_name"
 
-    def build_prompt(self, divination_body: DivinationBody) -> tuple[str, str]:
+    def build_prompt(self, divination_body: DivinationBody) -> Tuple[str, str]:
         if (not divination_body.new_name or not all([
             divination_body.new_name.surname,
             divination_body.new_name.birthday,
@@ -36,4 +31,4 @@ class NewNameFactory(DivinationFactory):
         )
         if divination_body.new_name.new_name_prompt:
             prompt += f",我的要求是: {divination_body.new_name.new_name_prompt}"
-        return prompt, NEW_NAME_PROMPT
+        return prompt, get_system_prompt(self.divination_type)

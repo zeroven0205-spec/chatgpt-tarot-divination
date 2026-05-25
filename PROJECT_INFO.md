@@ -221,11 +221,13 @@ data: {"content":"今天的"}
 | 变量 | 必填 | 默认值 | 说明 |
 |------|------|--------|------|
 | `api_key` | 是 | — | OpenAI API Key |
+| `app_env` | 否 | `development` | 运行环境；生产部署设置为 `production` |
 | `api_base` | 否 | `https://api.openai.com/v1` | API Base URL |
 | `model` | 否 | `gpt-3.5-turbo` | 默认模型 |
 | `github_client_id` | 否 | — | GitHub OAuth Client ID |
 | `github_client_secret` | 否 | — | GitHub OAuth Client Secret |
-| `jwt_secret` | 否 | `secret` | JWT 签名密钥 |
+| `jwt_secret` | 生产必填 | `secret`（仅开发） | JWT 签名密钥；`app_env=production` 时必须设置为非默认强随机值 |
+| `cors_origins` | 否 | `http://localhost:5173` | 允许跨域来源，生产环境建议设置为实际域名 |
 | `redis_url` | 否 | — | Redis 连接地址 |
 | `upstash_api_url` | 否 | — | Upstash KV REST URL |
 | `upstash_api_token` | 否 | — | Upstash KV Token |
@@ -246,16 +248,16 @@ data: {"content":"今天的"}
 
 ### 前提条件
 
-- Node.js 16+
-- Python 3.8+
-- pnpm
+- Node.js 20+
+- Python 3.11
+- pnpm 10+
 - OpenAI API Key
 
 ### 后端启动
 
 ```bash
 # 创建虚拟环境
-python3 -m venv ./venv
+python3.11 -m venv ./venv
 
 # 安装依赖
 ./venv/bin/python3 -m pip install -r requirements.txt
@@ -268,6 +270,14 @@ echo "api_key=sk-xxxx" > .env
 ```
 
 后端地址：`http://localhost:8000`
+
+### 后端测试
+
+```bash
+python3.11 -m venv ./venv
+./venv/bin/python3 -m pip install -r requirements-dev.txt
+./venv/bin/python3 -m pytest tests
+```
 
 ### 前端启动
 

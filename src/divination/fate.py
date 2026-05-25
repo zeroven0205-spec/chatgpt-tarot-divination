@@ -1,22 +1,15 @@
+from typing import Tuple
 from fastapi import HTTPException
 from src.models import DivinationBody
 from .base import DivinationFactory
-
-SYS_PROMPT = "你是一个姻缘助手，我给你发两个人的名字，用逗号隔开，"\
-    "你来随机说一下，这两个人之间的缘分如何？"\
-    " 不需要很真实，只需要娱乐化的说一下即可，"\
-    "你可以根据人名先判断一下这个人名的真实性，"\
-    "如果输入是一些类似张三李四之类的，就返回不合适，"\
-    "或者如果两个人的名字性别，都是同性，也最好返回不合适。"\
-    "然后基本主要围绕, 90%的概率 说二人很合适, 然后10%的概率，"\
-    "说对方不合适，并列出为啥这样的原因。"
+from .prompt_registry import get_system_prompt
 
 
 class Fate(DivinationFactory):
 
     divination_type = "fate"
 
-    def build_prompt(self, divination_body: DivinationBody) -> tuple[str, str]:
+    def build_prompt(self, divination_body: DivinationBody) -> Tuple[str, str]:
         fate = divination_body.fate
         if not fate or not fate.name1 or not fate.name2:
             raise HTTPException(status_code=400, detail="姻缘预测需要提供两个人的姓名 (name1 和 name2)")
@@ -26,4 +19,4 @@ class Fate(DivinationFactory):
         def sanitize(s: str) -> str:
             return ''.join(c for c in s if c.isalnum() or c in (' ', '-', '_'))[:40]
         prompt = f'{sanitize(fate.name1)}, {sanitize(fate.name2)}'
-        return prompt, SYS_PROMPT
+        return prompt, get_system_prompt(self.divination_type)

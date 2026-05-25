@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import List, Tuple
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     # project settings
     project_name: str = "ai-divination"
+    app_env: str = "development"
 
     # OpenAI API settings
     api_key: str = Field(default="", exclude=True)
@@ -23,7 +24,7 @@ class Settings(BaseSettings):
     jwt_secret: str = Field(default="secret", exclude=True)
 
     # CORS allowed origins (comma-separated)
-    cors_origins: list[str] = Field(default=["http://localhost:5173"], exclude=True)
+    cors_origins: List[str] = Field(default=["http://localhost:5173"], exclude=True)
 
     # token limit for max_tokens in chat completions
     max_tokens_limit: int = Field(default=2000, exclude=True)
@@ -63,11 +64,18 @@ class Settings(BaseSettings):
         env_file = ".env"
 
     def model_post_init(self, *args, **kwargs):
-        import os
-        if os.environ.get("jwt_secret") is None and self.jwt_secret == "secret":
+        app_env = self.app_env.lower()
+        using_default_jwt_secret = self.jwt_secret == "secret"
+
+        if app_env in {"prod", "production"} and using_default_jwt_secret:
+            raise ValueError(
+                "jwt_secret must be set to a non-default value when app_env=production"
+            )
+
+        if using_default_jwt_secret:
             _logger.warning(
-                "jwt_secret is using default value 'secret' in production. "
-                "Set jwt_secret in .env for security."
+                "jwt_secret is using development default value 'secret'. "
+                "Set a strong jwt_secret and app_env=production for production deployments."
             )
 
 

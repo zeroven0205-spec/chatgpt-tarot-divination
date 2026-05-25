@@ -171,6 +171,7 @@ export default function HistoryPage() {
           show={showDrawer}
           onClose={() => setShowDrawer(false)}
           result={renderedResult}
+          rawResult={selectedItem.result}
           loading={false}
           streaming={false}
         />

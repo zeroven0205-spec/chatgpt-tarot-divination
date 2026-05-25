@@ -1,4 +1,5 @@
 import time
+import uuid
 from fastapi import HTTPException
 import redis
 import logging
@@ -46,15 +47,17 @@ class RedisCacheClient(CacheClientBase):
 
     @classmethod
     def check_rate_limit(cls, key: str, time_window_seconds: int, max_requests: int) -> None:
-        # user zest to check rate limit
         cur_timestamp = int(time.time())
+        request_member = f"{cur_timestamp}:{uuid.uuid4().hex}"
         try:
             cls.init_redis()
-            cls.redis_client.zremrangebyscore(key, "-inf", cur_timestamp - time_window_seconds)
-            cls.redis_client.zadd(key, {cur_timestamp: cur_timestamp})
-            cls.redis_client.expire(key, time_window_seconds)
-            req_count = cls.redis_client.zcard(key)
-            if req_count >= max_requests:
+            pipeline = cls.redis_client.pipeline()
+            pipeline.zremrangebyscore(key, "-inf", cur_timestamp - time_window_seconds)
+            pipeline.zadd(key, {request_member: cur_timestamp})
+            pipeline.expire(key, time_window_seconds)
+            pipeline.zcard(key)
+            _, _, _, req_count = pipeline.execute()
+            if req_count > max_requests:
                 raise HTTPException(
                     status_code=429, detail="Rate limit exceeded"
                 )
